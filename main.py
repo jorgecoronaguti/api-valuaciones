@@ -42,6 +42,16 @@ def dcf_method(data: StartupData):
     discounted_value = projected_cash_flow / (1 + discount_rate)
     return {"valuation": discounted_value}
 
+# Endpoint para servir el cliente de prueba HTML
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+import os
+
+@app.get("/test", response_class=HTMLResponse)
+async def get_test_client():
+    with open("test_client.html", "r") as f:
+        return f.read()
+
 # Ejecutar la API si se ejecuta el archivo
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

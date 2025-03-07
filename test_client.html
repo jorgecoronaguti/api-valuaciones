@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Startup Valuation API Tester</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-height: 100px;
+            background-color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <h1>Startup Valuation API Tester</h1>
+
+    <div class="container">
+        <h2>Input Data</h2>
+        <form id="valuationForm">
+            <label for="name">Startup Name:</label>
+            <input type="text" id="name" value="Startup X" required>
+            
+            <label for="revenue">Annual Revenue ($):</label>
+            <input type="number" id="revenue" value="1000000" required>
+            
+            <label for="growth_rate">Growth Rate (as decimal, e.g., 0.3 for 30%):</label>
+            <input type="number" id="growth_rate" value="0.3" step="0.01" required>
+            
+            <label for="investment_required">Investment Required ($):</label>
+            <input type="number" id="investment_required" value="500000" required>
+            
+            <label for="method">Valuation Method:</label>
+            <select id="method">
+                <option value="vc_method">Venture Capital (VC) Method</option>
+                <option value="dcf">Discounted Cash Flow (DCF)</option>
+            </select>
+            
+            <button type="submit">Calculate Valuation</button>
+        </form>
+    </div>
+
+    <div class="container">
+        <h2>Result</h2>
+        <div id="result">Results will appear here...</div>
+    </div>
+
+    <script>
+        document.getElementById('valuationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const revenue = parseFloat(document.getElementById('revenue').value);
+            const growth_rate = parseFloat(document.getElementById('growth_rate').value);
+            const investment_required = parseFloat(document.getElementById('investment_required').value);
+            const method = document.getElementById('method').value;
+            
+            const data = {
+                name,
+                revenue,
+                growth_rate,
+                investment_required
+            };
+            
+            try {
+                const response = await fetch(`/valuate/${method}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                // Format the result
+                const formattedResult = `
+                    <h3>Valuation Result</h3>
+                    <p><strong>Startup:</strong> ${name}</p>
+                    <p><strong>Valuation Method:</strong> ${method === 'vc_method' ? 'Venture Capital' : 'Discounted Cash Flow'}</p>
+                    <p><strong>Estimated Valuation:</strong> $${result.valuation.toLocaleString()}</p>
+                `;
+                
+                document.getElementById('result').innerHTML = formattedResult;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
