@@ -3,7 +3,21 @@ from pydantic import BaseModel
 import uvicorn
 
 # Crear la API
-app = FastAPI()
+app = FastAPI(
+    title="Startup Valuation API",
+    description="API for valuing startups using different methods",
+    version="1.0.0"
+)
+
+@app.get("/")
+def read_root():
+    return {
+        "message": "Welcome to the Startup Valuation API",
+        "endpoints": {
+            "VC Method": "/valuate/vc_method/",
+            "DCF Method": "/valuate/dcf/"
+        }
+    }
 
 # Modelo de datos que ingresará el usuario
 class StartupData(BaseModel):
