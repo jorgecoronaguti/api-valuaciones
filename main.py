@@ -39,6 +39,14 @@ class StartupData(BaseModel):
     growth_rate: float
     investment_required: float
 
+# Modelo específico para DCF
+class DCFData(BaseModel):
+    initial_cash_flow: float
+    growth_rate: float
+    discount_rate: float
+    terminal_growth_rate: float
+    projection_years: int
+
 # Método de valuación Venture Capital (VC Method)
 @app.post("/valuate/vc_method/")
 def vc_method(data: StartupData):
@@ -58,33 +66,61 @@ def vc_method(data: StartupData):
 
 # Método de valuación Descuento de Flujos de Caja (DCF)
 @app.post("/valuate/dcf/")
-def dcf_method(data: StartupData):
-    # Validación de datos
-    if data.revenue <= 0:
-        return {"valuation": 0, "error": "Los ingresos deben ser positivos"}
+def dcf_method(data: DCFData | StartupData):
+    # Compatibilidad con ambos modelos
+    if isinstance(data, StartupData):
+        # Usar el modelo anterior
+        if data.revenue <= 0:
+            return {"valuation": 0, "error": "Los ingresos deben ser positivos"}
+        
+        # Tasa de descuento ajustada al riesgo
+        base_discount_rate = 0.1  # Base del 10%
+        risk_adjustment = min(0.2, max(0.05, 0.25 - data.growth_rate))  # Menor crecimiento = mayor riesgo
+        discount_rate = base_discount_rate + risk_adjustment
+        
+        # Proyección de flujos por 5 años
+        total_value = 0
+        annual_revenue = data.revenue
+        
+        for year in range(1, 6):
+            annual_revenue *= (1 + data.growth_rate)
+            # Asumiendo un margen operativo del 20%
+            cash_flow = annual_revenue * 0.2
+            # Valor presente del flujo
+            total_value += cash_flow / ((1 + discount_rate) ** year)
+        
+        # Valor terminal (perpetuidad)
+        terminal_growth = min(0.03, data.growth_rate / 3)  # Crecimiento terminal conservador
+        terminal_value = (annual_revenue * 0.2 * (1 + terminal_growth)) / (discount_rate - terminal_growth)
+        terminal_value_discounted = terminal_value / ((1 + discount_rate) ** 5)
+        
+        valuation = total_value + terminal_value_discounted
+    else:
+        # Usar el nuevo modelo DCF
+        # Validación
+        if data.initial_cash_flow <= 0:
+            return {"valuation": 0, "error": "El flujo de caja inicial debe ser positivo"}
+        
+        # Convertir porcentajes si es necesario (si vienen como 20 en lugar de 0.2)
+        growth_rate = data.growth_rate / 100 if data.growth_rate > 1 else data.growth_rate
+        discount_rate = data.discount_rate / 100 if data.discount_rate > 1 else data.discount_rate
+        terminal_growth_rate = data.terminal_growth_rate / 100 if data.terminal_growth_rate > 1 else data.terminal_growth_rate
+        
+        # Cálculo del valor presente de los flujos futuros
+        total_value = 0
+        cash_flow = data.initial_cash_flow
+        
+        for year in range(1, data.projection_years + 1):
+            cash_flow *= (1 + growth_rate)
+            # Valor presente del flujo
+            total_value += cash_flow / ((1 + discount_rate) ** year)
+        
+        # Valor terminal (perpetuidad)
+        terminal_value = (cash_flow * (1 + terminal_growth_rate)) / (discount_rate - terminal_growth_rate)
+        terminal_value_discounted = terminal_value / ((1 + discount_rate) ** data.projection_years)
+        
+        valuation = total_value + terminal_value_discounted
     
-    # Tasa de descuento ajustada al riesgo
-    base_discount_rate = 0.1  # Base del 10%
-    risk_adjustment = min(0.2, max(0.05, 0.25 - data.growth_rate))  # Menor crecimiento = mayor riesgo
-    discount_rate = base_discount_rate + risk_adjustment
-    
-    # Proyección de flujos por 5 años
-    total_value = 0
-    annual_revenue = data.revenue
-    
-    for year in range(1, 6):
-        annual_revenue *= (1 + data.growth_rate)
-        # Asumiendo un margen operativo del 20%
-        cash_flow = annual_revenue * 0.2
-        # Valor presente del flujo
-        total_value += cash_flow / ((1 + discount_rate) ** year)
-    
-    # Valor terminal (perpetuidad)
-    terminal_growth = min(0.03, data.growth_rate / 3)  # Crecimiento terminal conservador
-    terminal_value = (annual_revenue * 0.2 * (1 + terminal_growth)) / (discount_rate - terminal_growth)
-    terminal_value_discounted = terminal_value / ((1 + discount_rate) ** 5)
-    
-    valuation = total_value + terminal_value_discounted
     return {"valuation": round(valuation, 2)}
 
 # Método de valuación Berkus

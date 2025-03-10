@@ -112,7 +112,12 @@
                 
                 // Si estamos en un dominio diferente al de la API, usar la URL de la API desplegada
                 if (!baseUrl.includes('replit')) {
-                    baseUrl = 'https://tu-repl-desplegado.replit.app'; // Reemplaza con tu URL real de despliegue
+                    // Obtener la URL de despliegue desde Replit
+                    const deploymentUrl = window.location.hostname.includes('vercel.app') 
+                        ? 'https://tu-repl-api.replit.app' // Reemplaza con tu URL real de despliegue en Replit
+                        : baseUrl;
+                    baseUrl = deploymentUrl;
+                    console.log("Using deployment URL:", baseUrl);
                 }
                 
                 console.log("Using base URL:", baseUrl);
