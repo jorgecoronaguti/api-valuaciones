@@ -107,7 +107,11 @@
             };
             
             try {
-                const response = await fetch(`/valuate/${method}/`, {
+                // Intentar obtener la URL base desde la ventana actual
+                const baseUrl = window.location.origin;
+                console.log("Using base URL:", baseUrl);
+                
+                const response = await fetch(`${baseUrl}/valuate/${method}/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

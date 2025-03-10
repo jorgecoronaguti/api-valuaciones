@@ -1,12 +1,23 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
+import os
 
 # Crear la API
 app = FastAPI(
     title="Startup Valuation API",
     description="API for valuing startups using different methods",
     version="1.0.0"
+)
+
+# Configurar CORS para permitir solicitudes desde cualquier origen
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permite todas las fuentes
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite todos los métodos
+    allow_headers=["*"],  # Permite todos los headers
 )
 
 @app.get("/")
@@ -95,4 +106,17 @@ async def get_test_client():
 
 # Ejecutar la API si se ejecuta el archivo
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Intentar con el puerto 8000 primero
+    port = 8000
+    try:
+        uvicorn.run(app, host="0.0.0.0", port=port)
+    except OSError:
+        # Si el puerto 8000 está ocupado, intentar con puerto 8080
+        print(f"Puerto {port} está en uso. Intentando con puerto 8080...")
+        port = 8080
+        try:
+            uvicorn.run(app, host="0.0.0.0", port=port)
+        except OSError:
+            # Si ambos están ocupados, usar un puerto aleatorio
+            print(f"Puerto {port} también está en uso. Intentando con un puerto aleatorio...")
+            uvicorn.run(app, host="0.0.0.0", port=0)
