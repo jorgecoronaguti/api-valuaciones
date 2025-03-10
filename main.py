@@ -47,19 +47,42 @@ class DCFData(BaseModel):
     terminal_growth_rate: float
     projection_years: int
 
+# Modelo específico para VC Method
+class VCData(BaseModel):
+    name: str = "Startup X"
+    revenue: float
+    growth_rate: float 
+    investment_required: float = 500000
+    # Campos opcionales para compatibilidad con el formato DCF
+    initial_cash_flow: float = None
+    discount_rate: float = None
+    terminal_growth_rate: float = None
+    projection_years: int = None
+
 # Método de valuación Venture Capital (VC Method)
 @app.post("/valuate/vc_method/")
-def vc_method(data: StartupData):
+@app.post("/valuate/vc-method/")  # Ruta alternativa con guión para mayor compatibilidad
+def vc_method(data: VCData | StartupData | DCFData):
+    # Extraer los valores necesarios del modelo de datos
+    revenue = getattr(data, "revenue", None)
+    if revenue is None and hasattr(data, "initial_cash_flow"):
+        revenue = data.initial_cash_flow
+    
+    growth_rate = getattr(data, "growth_rate", 0.2)
+    # Si el crecimiento viene en porcentaje (20 en vez de 0.2)
+    if growth_rate > 1:
+        growth_rate = growth_rate / 100
+        
     # Validación de datos
-    if data.revenue <= 0:
+    if revenue is None or revenue <= 0:
         return {"valuation": 0, "error": "Los ingresos deben ser positivos"}
     
     # Cálculo del valor de salida considerando el crecimiento
-    multiple = max(5, 10 + data.growth_rate * 10)  # Ajusta el múltiplo según el crecimiento
-    exit_value = data.revenue * multiple
+    multiple = max(5, 10 + growth_rate * 10)  # Ajusta el múltiplo según el crecimiento
+    exit_value = revenue * multiple
     
     # El retorno esperado por inversores varía según el riesgo
-    investor_return = max(3, 8 - data.growth_rate * 5)  # Menor crecimiento = mayor retorno requerido
+    investor_return = max(3, 8 - growth_rate * 5)  # Menor crecimiento = mayor retorno requerido
     
     valuation = exit_value / investor_return
     return {"valuation": round(valuation, 2)}

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -52,6 +51,18 @@
             min-height: 100px;
             background-color: #fff;
         }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            white-space: pre-wrap; /* Allow line breaks in pre tags */
+        }
+        .error {
+            background-color: #ffdddd;
+            border: 1px solid #ffaaaa;
+            color: #aa0000;
+        }
     </style>
 </head>
 <body>
@@ -62,16 +73,16 @@
         <form id="valuationForm">
             <label for="name">Startup Name:</label>
             <input type="text" id="name" value="Startup X" required>
-            
+
             <label for="revenue">Annual Revenue ($):</label>
             <input type="number" id="revenue" value="1000000" required>
-            
+
             <label for="growth_rate">Growth Rate (as decimal, e.g., 0.3 for 30%):</label>
             <input type="number" id="growth_rate" value="0.3" step="0.01" required>
-            
+
             <label for="investment_required">Investment Required ($):</label>
             <input type="number" id="investment_required" value="500000" required>
-            
+
             <label for="method">Valuation Method:</label>
             <select id="method">
                 <option value="vc_method">Venture Capital (VC) Method</option>
@@ -79,7 +90,7 @@
                 <option value="berkus">Berkus Method</option>
                 <option value="first_chicago">First Chicago Method</option>
             </select>
-            
+
             <button type="submit">Calculate Valuation</button>
         </form>
     </div>
@@ -89,40 +100,63 @@
         <div id="result">Results will appear here...</div>
     </div>
 
+    <div class="container">
+        <h2>Prueba directa de API</h2>
+        <div>
+            <label for="endpoint">Endpoint</label>
+            <input id="endpoint" placeholder="/valuate/dcf/">
+            <p class="hint">Ejemplo: /valuate/dcf/, /evaluate/vc-method/, /evaluate/berkus-method/, /evaluate/first-chicago/</p>
+        </div>
+        <div>
+            <label for="requestBody">Cuerpo de la solicitud (JSON)</label>
+            <textarea id="requestBody" rows="10">
+{
+  "initial_cash_flow": 100000,
+  "growth_rate": 20,
+  "discount_rate": 15,
+  "terminal_growth_rate": 3,
+  "projection_years": 5
+}
+            </textarea>
+        </div>
+        <button id="testApi">Probar API</button>
+        <div id="apiResult" class="result"></div>
+    </div>
+
     <script>
         document.getElementById('valuationForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             const name = document.getElementById('name').value;
             const revenue = parseFloat(document.getElementById('revenue').value);
             const growth_rate = parseFloat(document.getElementById('growth_rate').value);
             const investment_required = parseFloat(document.getElementById('investment_required').value);
             const method = document.getElementById('method').value;
-            
+
             const data = {
                 name,
                 revenue,
                 growth_rate,
                 investment_required
             };
-            
+
             try {
                 // Usar directamente la URL de la API en Render
                 const baseUrl = 'https://api-valuaciones.onrender.com';
                 console.log("Using Render API URL:", baseUrl);
-                
+
                 console.log("Using base URL:", baseUrl);
-                
-                const response = await fetch(`${baseUrl}/valuate/${method}/`, {
+
+                const response = await fetch(`${baseUrl}/evaluate/${method}/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(data)
                 });
-                
+
                 const result = await response.json();
-                
+
                 // Format the result
                 const formattedResult = `
                     <h3>Valuation Result</h3>
@@ -135,11 +169,49 @@
 }</p>
                     <p><strong>Estimated Valuation:</strong> $${result.valuation.toLocaleString()}</p>
                 `;
-                
+
                 document.getElementById('result').innerHTML = formattedResult;
             } catch (error) {
                 document.getElementById('result').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
                 console.error('Error:', error);
+            }
+        });
+    </script>
+    <script>
+        document.getElementById('testApi').addEventListener('click', async function() {
+            const endpoint = document.getElementById('endpoint').value;
+            const requestBody = document.getElementById('requestBody').value;
+            const resultDiv = document.getElementById('apiResult');
+
+            resultDiv.innerHTML = "Enviando solicitud...";
+
+            try {
+                // Usar la URL de Render
+                const baseUrl = 'https://api-valuaciones.onrender.com';
+
+                // Asegurarnos que el endpoint empiece con /
+                const formattedEndpoint = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
+
+                const response = await fetch(`${baseUrl}${formattedEndpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: requestBody
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">
+                        <p>Error ${response.status}:</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
             }
         });
     </script>
