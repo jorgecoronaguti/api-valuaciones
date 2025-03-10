@@ -105,7 +105,7 @@
         <div>
             <label for="endpoint">Endpoint</label>
             <input id="endpoint" placeholder="/valuate/dcf/">
-            <p class="hint">Ejemplo: /valuate/dcf/, /evaluate/vc-method/, /evaluate/berkus-method/, /evaluate/first-chicago/</p>
+            <p class="hint">Ejemplo: /valuate/dcf/, /valuate/vc-method/, /valuate/berkus-method/, /valuate/first-chicago/</p>
         </div>
         <div>
             <label for="requestBody">Cuerpo de la solicitud (JSON)</label>
@@ -147,7 +147,7 @@
 
                 console.log("Using base URL:", baseUrl);
 
-                const response = await fetch(`${baseUrl}/evaluate/${method}/`, {
+                const response = await fetch(`${baseUrl}/valuate/${method}/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
