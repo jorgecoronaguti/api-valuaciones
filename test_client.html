@@ -107,8 +107,14 @@
             };
             
             try {
-                // Intentar obtener la URL base desde la ventana actual
-                const baseUrl = window.location.origin;
+                // Determinar la URL base
+                let baseUrl = window.location.origin;
+                
+                // Si estamos en un dominio diferente al de la API, usar la URL de la API desplegada
+                if (!baseUrl.includes('replit')) {
+                    baseUrl = 'https://tu-repl-desplegado.replit.app'; // Reemplaza con tu URL real de despliegue
+                }
+                
                 console.log("Using base URL:", baseUrl);
                 
                 const response = await fetch(`${baseUrl}/valuate/${method}/`, {
