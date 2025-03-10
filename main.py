@@ -106,17 +106,23 @@ async def get_test_client():
 
 # Ejecutar la API si se ejecuta el archivo
 if __name__ == "__main__":
-    # Intentar con el puerto 8000 primero
-    port = 8000
+    # Usar puerto 8080 directamente
+    port = 8080
     try:
+        # Primero matar cualquier proceso que pueda estar usando el puerto
+        import os
+        os.system(f"pkill -f 'uvicorn' || true")
+        
+        print(f"Iniciando servidor en puerto {port}...")
         uvicorn.run(app, host="0.0.0.0", port=port)
-    except OSError:
-        # Si el puerto 8000 está ocupado, intentar con puerto 8080
-        print(f"Puerto {port} está en uso. Intentando con puerto 8080...")
-        port = 8080
+    except Exception as e:
+        print(f"Error al iniciar el servidor: {e}")
+        # Si el puerto 8080 está ocupado, usar otro puerto
         try:
+            port = 3000
+            print(f"Intentando con puerto {port}...")
             uvicorn.run(app, host="0.0.0.0", port=port)
-        except OSError:
-            # Si ambos están ocupados, usar un puerto aleatorio
-            print(f"Puerto {port} también está en uso. Intentando con un puerto aleatorio...")
+        except Exception:
+            # Como último recurso, usar un puerto aleatorio
+            print("Usando puerto aleatorio...")
             uvicorn.run(app, host="0.0.0.0", port=0)
