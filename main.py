@@ -15,7 +15,9 @@ def read_root():
         "message": "Welcome to the Startup Valuation API",
         "endpoints": {
             "VC Method": "/valuate/vc_method/",
-            "DCF Method": "/valuate/dcf/"
+            "DCF Method": "/valuate/dcf/",
+            "Berkus Method": "/valuate/berkus/",
+            "First Chicago Method": "/valuate/first_chicago/"
         }
     }
 
@@ -41,6 +43,45 @@ def dcf_method(data: StartupData):
     projected_cash_flow = data.revenue * (1 + data.growth_rate)
     discounted_value = projected_cash_flow / (1 + discount_rate)
     return {"valuation": discounted_value}
+
+# Método de valuación Berkus
+@app.post("/valuate/berkus/")
+def berkus_method(data: StartupData):
+    # El método Berkus asigna valor basado en 5 aspectos clave
+    base_value = 500000  # Valor base por idea/concepto
+    
+    # Valoraciones basadas en revenue y growth rate
+    management_value = min(500000, data.revenue * 0.2)  # Calidad del equipo de gestión
+    product_value = min(500000, data.revenue * 0.3)     # Calidad/avance del producto
+    market_value = min(500000, data.growth_rate * 1000000)  # Tamaño/potencial del mercado
+    competition_value = min(500000, (1 - min(data.growth_rate, 0.5)) * 500000)  # Reducción por competencia
+    
+    total_valuation = base_value + management_value + product_value + market_value + competition_value
+    return {"valuation": total_valuation}
+
+# Método de valuación First Chicago
+@app.post("/valuate/first_chicago/")
+def first_chicago_method(data: StartupData):
+    # First Chicago considera múltiples escenarios (éxito, lateral, fracaso)
+    
+    # Escenario optimista (éxito)
+    success_probability = min(data.growth_rate * 2, 0.7)  # Mayor growth rate = más probabilidad de éxito
+    success_valuation = data.revenue * 15  # Múltiplo más alto en caso de éxito
+    
+    # Escenario base (lateral)
+    base_probability = 0.2
+    base_valuation = data.revenue * 5  # Múltiplo moderado
+    
+    # Escenario pesimista (fracaso)
+    failure_probability = 1 - success_probability - base_probability
+    failure_valuation = data.investment_required * 0.5  # Valor de liquidación
+    
+    # Valoración ponderada por probabilidad
+    weighted_valuation = (success_probability * success_valuation + 
+                         base_probability * base_valuation + 
+                         failure_probability * failure_valuation)
+    
+    return {"valuation": weighted_valuation}
 
 # Endpoint para servir el cliente de prueba HTML
 from fastapi.responses import HTMLResponse

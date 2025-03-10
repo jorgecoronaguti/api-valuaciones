@@ -76,6 +76,8 @@
             <select id="method">
                 <option value="vc_method">Venture Capital (VC) Method</option>
                 <option value="dcf">Discounted Cash Flow (DCF)</option>
+                <option value="berkus">Berkus Method</option>
+                <option value="first_chicago">First Chicago Method</option>
             </select>
             
             <button type="submit">Calculate Valuation</button>
@@ -119,7 +121,12 @@
                 const formattedResult = `
                     <h3>Valuation Result</h3>
                     <p><strong>Startup:</strong> ${name}</p>
-                    <p><strong>Valuation Method:</strong> ${method === 'vc_method' ? 'Venture Capital' : 'Discounted Cash Flow'}</p>
+                    <p><strong>Valuation Method:</strong> ${
+    method === 'vc_method' ? 'Venture Capital' : 
+    method === 'dcf' ? 'Discounted Cash Flow' : 
+    method === 'berkus' ? 'Berkus Method' : 
+    'First Chicago Method'
+}</p>
                     <p><strong>Estimated Valuation:</strong> $${result.valuation.toLocaleString()}</p>
                 `;
                 
