@@ -216,7 +216,14 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    if (data.error) {
+                        resultDiv.innerHTML = `<div class="error">
+                            <p>Error en el cálculo:</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>`;
+                    } else {
+                        resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    }
                 } else {
                     resultDiv.innerHTML = `<div class="error">
                         <p>Error ${response.status}:</p>
