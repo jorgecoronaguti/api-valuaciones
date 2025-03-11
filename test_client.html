@@ -103,6 +103,11 @@
     <div class="container">
         <h2>Prueba directa de API</h2>
         <div>
+            <label for="apiBaseUrl">URL Base de la API</label>
+            <input id="apiBaseUrl" placeholder="https://startup-valuation-api.username.repl.co">
+            <p class="hint">Deja vacío para usar la URL local o ingresa la URL completa del deployment</p>
+        </div>
+        <div>
             <label for="endpoint">Endpoint</label>
             <input id="endpoint" placeholder="/valuate/dcf/">
             <p class="hint">Ejemplo: /valuate/dcf, /valuate/vc-method, /valuate/berkus-method, /valuate/first-chicago</p>
@@ -226,12 +231,14 @@
             const endpoint = document.getElementById('endpoint').value;
             let requestBody = document.getElementById('requestBody').value;
             const resultDiv = document.getElementById('apiResult');
-
-            resultDiv.innerHTML = "Enviando solicitud...";
+            
+            // Obtener la URL base (por defecto usar la del deployment)
+            const baseUrlInput = document.getElementById('apiBaseUrl');
+            const baseUrl = baseUrlInput && baseUrlInput.value ? baseUrlInput.value.trim() : window.location.origin;
+            
+            resultDiv.innerHTML = "Enviando solicitud a " + baseUrl + endpoint + "...";
 
             try {
-                // Usar la URL de Replit
-                const baseUrl = window.location.origin;
 
                 // Asegurarnos que el endpoint empiece con /
                 const formattedEndpoint = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
@@ -256,7 +263,7 @@
                     body: requestBody
                 });
 
-                const responseText = await response.text();t();
+                const responseText = await response.text();
                 console.log("Response status:", response.status);
                 console.log("Response text:", responseText);
                 
