@@ -136,6 +136,10 @@
             const investment_required = parseFloat(document.getElementById('investment_required').value);
             const method = document.getElementById('method').value;
 
+            // Usar la URL de la API en Replit
+            const baseUrl = window.location.origin;
+            console.log("Using Replit API URL:", baseUrl);
+
             let data = {};
             let apiUrl = '';
 
@@ -143,16 +147,16 @@
             if (method === 'dcf') {
                 apiUrl = `${baseUrl}/valuate/dcf/`;
                 data = {
-                    initial_cash_flow: parseFloat(document.getElementById('revenue').value),
-                    growth_rate: parseFloat(document.getElementById('growth_rate').value),
+                    initial_cash_flow: revenue,
+                    growth_rate: growth_rate,
                     discount_rate: 0.15, // Valor por defecto
                     terminal_growth_rate: 0.03, // Valor por defecto
-                    projection_years: 5 // Valor por defecto
+                    projection_years: 5, // Valor por defecto
+                    // Incluir también campos de StartupData para compatibilidad
+                    name: name,
+                    revenue: revenue,
+                    investment_required: investment_required
                 };
-                // Incluir también campos de StartupData para compatibilidad
-                data.name = document.getElementById('name').value;
-                data.revenue = parseFloat(document.getElementById('revenue').value);
-                data.investment_required = parseFloat(document.getElementById('investment_required').value);
             } else {
                 apiUrl = `${baseUrl}/valuate/${method}/`;
                 data = {
@@ -163,18 +167,11 @@
                 };
             }
 
+            // Mostrar detalles de la petición para debugging
+            console.log("Sending request to:", apiUrl);
+            console.log("With data:", data);
 
             try {
-                // Usar la URL de la API en Replit
-                const baseUrl = window.location.origin;
-                console.log("Using Replit API URL:", baseUrl);
-
-                console.log("Using base URL:", baseUrl);
-
-                // Mostrar detalles de la petición para debugging
-                console.log("Sending request to:", apiUrl);
-                console.log("With data:", data);
-
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
@@ -184,22 +181,31 @@
                     body: JSON.stringify(data)
                 });
 
-                if (!response.ok) {
-                    throw new Error(`Error HTTP: ${response.status} - ${await response.text()}`);
+                const responseText = await response.text();
+                console.log("Response status:", response.status);
+                console.log("Response text:", responseText);
+
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (e) {
+                    throw new Error(`Invalid JSON response: ${responseText}`);
                 }
 
-                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status} - ${JSON.stringify(result)}`);
+                }
 
                 // Format the result
                 const formattedResult = `
                     <h3>Valuation Result</h3>
                     <p><strong>Startup:</strong> ${name}</p>
                     <p><strong>Valuation Method:</strong> ${
-    method === 'vc_method' ? 'Venture Capital' : 
-    method === 'dcf' ? 'Discounted Cash Flow' : 
-    method === 'berkus' ? 'Berkus Method' : 
-    'First Chicago Method'
-}</p>
+                        method === 'vc_method' ? 'Venture Capital' : 
+                        method === 'dcf' ? 'Discounted Cash Flow' : 
+                        method === 'berkus' ? 'Berkus Method' : 
+                        'First Chicago Method'
+                    }</p>
                     <p><strong>Estimated Valuation:</strong> $${result.valuation.toLocaleString()}</p>
                 `;
 
@@ -213,7 +219,7 @@
     <script>
         document.getElementById('testApi').addEventListener('click', async function() {
             const endpoint = document.getElementById('endpoint').value;
-            const requestBody = document.getElementById('requestBody').value;
+            let requestBody = document.getElementById('requestBody').value;
             const resultDiv = document.getElementById('apiResult');
 
             resultDiv.innerHTML = "Enviando solicitud...";
@@ -224,6 +230,14 @@
 
                 // Asegurarnos que el endpoint empiece con /
                 const formattedEndpoint = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
+                
+                // Asegurarse que el cuerpo de la solicitud sea un objeto JSON válido
+                try {
+                    JSON.parse(requestBody);
+                } catch (e) {
+                    // Si no es JSON válido, intentamos limpiarlo
+                    requestBody = requestBody.trim();
+                }
 
                 console.log("Enviando solicitud a:", `${baseUrl}${formattedEndpoint}`);
                 console.log("Con datos:", requestBody);
@@ -237,7 +251,20 @@
                     body: requestBody
                 });
 
-                const data = await response.json();
+                const responseText = await response.text();
+                console.log("Response status:", response.status);
+                console.log("Response text:", responseText);
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    resultDiv.innerHTML = `<div class="error">
+                        <p>Error en la respuesta (no es JSON válido):</p>
+                        <pre>${responseText}</pre>
+                    </div>`;
+                    return;
+                }
 
                 if (response.ok) {
                     if (data.error) {
@@ -256,6 +283,7 @@
                 }
             } catch (error) {
                 resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+                console.error('Error completo:', error);
             }
         });
     </script>
