@@ -11,11 +11,25 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configurar CORS para permitir solicitudes desde cualquier origen
+# Configurar CORS para permitir solicitudes desde orígenes específicos
+origins = [
+    "https://api-valuaciones.onrender.com",
+    "https://v0-crear-front-api.vercel.app",
+    # Añadir la URL de tu Replit deployment
+    "https://" + os.environ.get("REPL_SLUG", "startup-valuation-api") + "." + os.environ.get("REPL_OWNER", "replit") + ".repl.co"
+]
+
+# Para desarrollo y testing, permitir orígenes adicionales
+if os.environ.get("ALLOW_ALL_ORIGINS", "false").lower() == "true":
+    origins.append("*")
+    allow_creds = False
+else:
+    allow_creds = True
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*", "https://api-valuaciones.onrender.com", "https://v0-crear-front-api.vercel.app"],
-    allow_credentials=True,
+    allow_origins=origins,
+    allow_credentials=allow_creds,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
     expose_headers=["*"]
