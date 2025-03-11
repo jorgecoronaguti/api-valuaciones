@@ -16,15 +16,13 @@ origins = [
     "https://api-valuaciones.onrender.com",
     "https://v0-crear-front-api.vercel.app",
     # Añadir la URL de tu Replit deployment
-    "https://" + os.environ.get("REPL_SLUG", "startup-valuation-api") + "." + os.environ.get("REPL_OWNER", "replit") + ".repl.co"
+    "https://" + os.environ.get("REPL_SLUG", "startup-valuation-api") + "." + os.environ.get("REPL_OWNER", "replit") + ".repl.co",
+    # Permitir todos los orígenes en desarrollo
+    "*"
 ]
 
-# Para desarrollo y testing, permitir orígenes adicionales
-if os.environ.get("ALLOW_ALL_ORIGINS", "false").lower() == "true":
-    origins.append("*")
-    allow_creds = False
-else:
-    allow_creds = True
+# Dado que permitimos todos los orígenes, no podemos usar credentials
+allow_creds = False
 
 app.add_middleware(
     CORSMiddleware,
