@@ -14,7 +14,7 @@ app = FastAPI(
 # Configurar CORS para permitir solicitudes desde cualquier origen
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*", "https://tudominio-vercel.vercel.app"],  # Reemplaza con tu dominio real de Vercel
+    allow_origins=["*", "https://api-valuaciones.onrender.com", "https://tudominio.com"],  # Reemplaza "https://tudominio.com" con tu dominio real
     allow_credentials=True,
     allow_methods=["*"],  # Permite todos los métodos
     allow_headers=["*"],  # Permite todos los headers
