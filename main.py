@@ -89,6 +89,7 @@ def vc_method(data: VCData | StartupData | DCFData):
 
 # Método de valuación Descuento de Flujos de Caja (DCF)
 @app.post("/valuate/dcf/")
+@app.post("/valuate/dcf-method/")  # Ruta alternativa con guión para mayor compatibilidad
 def dcf_method(data: DCFData | StartupData):
     # Compatibilidad con ambos modelos
     if isinstance(data, StartupData):
@@ -148,6 +149,7 @@ def dcf_method(data: DCFData | StartupData):
 
 # Método de valuación Berkus
 @app.post("/valuate/berkus/")
+@app.post("/valuate/berkus-method/")  # Ruta alternativa con guión para mayor compatibilidad
 def berkus_method(data: StartupData):
     # El método Berkus asigna valor basado en 5 aspectos clave
     # Cada aspecto puede valer entre 0 y 500,000 USD
@@ -180,6 +182,7 @@ def berkus_method(data: StartupData):
 
 # Método de valuación First Chicago
 @app.post("/valuate/first_chicago/")
+@app.post("/valuate/first-chicago/")  # Ruta alternativa con guión para mayor compatibilidad
 def first_chicago_method(data: StartupData):
     # First Chicago considera múltiples escenarios (éxito, lateral, fracaso)
     
