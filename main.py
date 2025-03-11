@@ -18,7 +18,32 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
+
+# Añadir middleware para logging de peticiones
+@app.middleware("http")
+async def log_requests(request, call_next):
+    import time
+    start_time = time.time()
+    
+    # Log request details
+    print(f"Request: {request.method} {request.url}")
+    if request.method in ["POST", "PUT"]:
+        try:
+            body = await request.body()
+            print(f"Request body: {body.decode()}")
+        except Exception as e:
+            print(f"Could not log request body: {e}")
+    
+    response = await call_next(request)
+    
+    # Log response details
+    process_time = time.time() - start_time
+    print(f"Response status: {response.status_code}")
+    print(f"Process time: {process_time:.4f} seconds")
+    
+    return response
 
 @app.get("/")
 def read_root():
@@ -95,6 +120,7 @@ def vc_method(data: VCData | StartupData | DCFData):
 @app.post("/valuate/dcf/")
 @app.post("/valuate/dcf-method/")  # Ruta alternativa con guión para mayor compatibilidad
 def dcf_method(data: DCFData | StartupData):
+    print(f"DCF Method received data: {data}")
     # Compatibilidad con ambos modelos
     if isinstance(data, StartupData):
         # Usar el modelo anterior

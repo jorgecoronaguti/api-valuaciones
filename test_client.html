@@ -146,14 +146,23 @@
                 console.log("Using Replit API URL:", baseUrl);
 
                 console.log("Using base URL:", baseUrl);
+                
+                // Mostrar detalles de la petición para debugging
+                console.log("Sending request to:", `${baseUrl}/valuate/${method}/`);
+                console.log("With data:", data);
 
                 const response = await fetch(`${baseUrl}/valuate/${method}/`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify(data)
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status} - ${await response.text()}`);
+                }
 
                 const result = await response.json();
 
@@ -192,10 +201,14 @@
                 // Asegurarnos que el endpoint empiece con /
                 const formattedEndpoint = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
 
+                console.log("Enviando solicitud a:", `${baseUrl}${formattedEndpoint}`);
+                console.log("Con datos:", requestBody);
+                
                 const response = await fetch(`${baseUrl}${formattedEndpoint}`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
                     body: requestBody
                 });
