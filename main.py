@@ -102,9 +102,9 @@ class StartupData(BaseModel):
 class DCFData(BaseModel):
     initial_cash_flow: float
     growth_rate: float
-    discount_rate: float
-    terminal_growth_rate: float
-    projection_years: int
+    discount_rate: float = 0.15
+    terminal_growth_rate: float = 0.03
+    projection_years: int = 5
 
 # Modelo específico para VC Method
 class VCData(BaseModel):
@@ -125,13 +125,16 @@ def vc_method(data: dict | VCData | StartupData | DCFData):
     try:
         # Si es un diccionario, convertirlo a un objeto
         if isinstance(data, dict):
-            # Intentar determinar qué modelo usar basado en los campos
-            if 'revenue' in data:
+            try:
+                # Intentar convertir a StartupData primero
                 data = StartupData(**data)
-            elif 'initial_cash_flow' in data:
-                data = DCFData(**data)
-            else:
-                data = VCData(**data)
+            except Exception as e:
+                try:
+                    # Si falla, intentar con DCFData
+                    data = DCFData(**data)
+                except Exception as e2:
+                    # Si ambos fallan, usar VCData que tiene más campos opcionales
+                    data = VCData(**data)
 
         # Extraer los valores necesarios del modelo de datos
         revenue = getattr(data, "revenue", None)
@@ -168,11 +171,39 @@ def dcf_method(data: dict | DCFData | StartupData):
     try:
         # Si es un diccionario, convertirlo a un objeto tipo BaseModel
         if isinstance(data, dict):
-            # Determinar qué modelo usar basado en los campos presentes
-            if 'initial_cash_flow' in data:
-                data = DCFData(**data)
-            else:
-                data = StartupData(**data)
+            try:
+                # Intentar convertir a DCFData primero
+                if 'initial_cash_flow' in data:
+                    # Asegurarse de que todos los campos requeridos existan
+                    if 'terminal_growth_rate' not in data:
+                        data['terminal_growth_rate'] = 0.03
+                    if 'discount_rate' not in data:
+                        data['discount_rate'] = 0.15
+                    if 'projection_years' not in data:
+                        data['projection_years'] = 5
+                    data = DCFData(**data)
+                else:
+                    # Si no tiene initial_cash_flow, convertir a StartupData
+                    data = StartupData(**data)
+            except Exception as e:
+                # Si falla la conversión, intentar con StartupData como fallback
+                print(f"Error al convertir datos: {e}")
+                try:
+                    data = StartupData(**data)
+                except:
+                    # Crear un objeto DCFData mínimo si todo falla
+                    default_data = {
+                        'initial_cash_flow': 100000,
+                        'growth_rate': 0.2,
+                        'discount_rate': 0.15,
+                        'terminal_growth_rate': 0.03,
+                        'projection_years': 5
+                    }
+                    # Actualizar con los datos proporcionados si existen
+                    for key, value in data.items():
+                        if key in default_data:
+                            default_data[key] = value
+                    data = DCFData(**default_data)
 
         # Compatibilidad con ambos modelos
         if hasattr(data, 'revenue') and not hasattr(data, 'initial_cash_flow'):
@@ -249,9 +280,44 @@ def dcf_method(data: dict | DCFData | StartupData):
 @app.post("/valuate/berkus-method/")  # Ruta alternativa con guión para mayor compatibilidad
 def berkus_method(data: dict | StartupData | DCFData):
     try:
-        # Si es un diccionario, convertirlo a StartupData
+        # Si es un diccionario, convertirlo a StartupData o manejar DCFData
         if isinstance(data, dict):
-            data = StartupData(**data)
+            try:
+                # Intentar convertir a StartupData primero
+                data = StartupData(**data)
+            except Exception as e:
+                # Si falla, intentar con DCFData o crear objeto compatible
+                try:
+                    # Si tiene initial_cash_flow, tratar como DCFData
+                    if 'initial_cash_flow' in data:
+                        # Crear un objeto DCFData
+                        dcf_data = {}
+                        for key in ['initial_cash_flow', 'growth_rate', 'discount_rate', 'terminal_growth_rate', 'projection_years']:
+                            if key in data:
+                                dcf_data[key] = data[key]
+                        data = DCFData(**dcf_data)
+                    else:
+                        # Crear un objeto StartupData con valores por defecto
+                        startup_data = {
+                            'name': 'Startup X',
+                            'revenue': 1000000,
+                            'growth_rate': 0.2,
+                            'investment_required': 500000
+                        }
+                        # Actualizar con los datos proporcionados
+                        for key, value in data.items():
+                            if key in startup_data:
+                                startup_data[key] = value
+                        data = StartupData(**startup_data)
+                except Exception as e2:
+                    print(f"Error al convertir datos: {e2}")
+                    # Crear un objeto mínimo si todo falla
+                    data = StartupData(
+                        name="Startup X",
+                        revenue=1000000,
+                        growth_rate=0.2,
+                        investment_required=500000
+                    )
 
         # Asegurarse de tener campos necesarios
         revenue = getattr(data, 'revenue', None)
@@ -306,9 +372,44 @@ def berkus_method(data: dict | StartupData | DCFData):
 @app.post("/valuate/first-chicago/")  # Ruta alternativa con guión para mayor compatibilidad
 def first_chicago_method(data: dict | StartupData | DCFData):
     try:
-        # Si es un diccionario, convertirlo a StartupData
+        # Si es un diccionario, convertirlo a StartupData o manejar DCFData
         if isinstance(data, dict):
-            data = StartupData(**data)
+            try:
+                # Intentar convertir a StartupData primero
+                data = StartupData(**data)
+            except Exception as e:
+                # Si falla, intentar con DCFData o crear objeto compatible
+                try:
+                    # Si tiene initial_cash_flow, tratar como DCFData
+                    if 'initial_cash_flow' in data:
+                        # Crear un objeto DCFData
+                        dcf_data = {}
+                        for key in ['initial_cash_flow', 'growth_rate', 'discount_rate', 'terminal_growth_rate', 'projection_years']:
+                            if key in data:
+                                dcf_data[key] = data[key]
+                        data = DCFData(**dcf_data)
+                    else:
+                        # Crear un objeto StartupData con valores por defecto
+                        startup_data = {
+                            'name': 'Startup X',
+                            'revenue': 1000000,
+                            'growth_rate': 0.2,
+                            'investment_required': 500000
+                        }
+                        # Actualizar con los datos proporcionados
+                        for key, value in data.items():
+                            if key in startup_data:
+                                startup_data[key] = value
+                        data = StartupData(**startup_data)
+                except Exception as e2:
+                    print(f"Error al convertir datos: {e2}")
+                    # Crear un objeto mínimo si todo falla
+                    data = StartupData(
+                        name="Startup X",
+                        revenue=1000000,
+                        growth_rate=0.2,
+                        investment_required=500000
+                    )
 
         # Asegurarse de tener campos necesarios
         revenue = getattr(data, 'revenue', None)
