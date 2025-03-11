@@ -141,9 +141,9 @@
             };
 
             try {
-                // Usar directamente la URL de la API en Render
-                const baseUrl = 'https://api-valuaciones.onrender.com';
-                console.log("Using Render API URL:", baseUrl);
+                // Usar la URL de la API en Replit
+                const baseUrl = window.location.origin;
+                console.log("Using Replit API URL:", baseUrl);
 
                 console.log("Using base URL:", baseUrl);
 
@@ -186,8 +186,8 @@
             resultDiv.innerHTML = "Enviando solicitud...";
 
             try {
-                // Usar la URL de Render
-                const baseUrl = 'https://api-valuaciones.onrender.com';
+                // Usar la URL de Replit
+                const baseUrl = window.location.origin;
 
                 // Asegurarnos que el endpoint empiece con /
                 const formattedEndpoint = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
