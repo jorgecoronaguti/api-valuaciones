@@ -136,9 +136,14 @@
             const investment_required = parseFloat(document.getElementById('investment_required').value);
             const method = document.getElementById('method').value;
 
-            // Usar la URL de la API en Replit
+            // Usar la URL de la API local en Replit
             const baseUrl = window.location.origin;
-            console.log("Using Replit API URL:", baseUrl);
+            console.log("Using local API URL:", baseUrl);
+            
+            // Comprobar conectividad
+            fetch(`${baseUrl}/status`)
+              .then(r => console.log("API status check:", r.status))
+              .catch(e => console.error("Error checking API status:", e));
 
             let data = {};
             let apiUrl = '';
@@ -251,7 +256,7 @@
                     body: requestBody
                 });
 
-                const responseText = await response.text();
+                const responseText = await response.text();t();
                 console.log("Response status:", response.status);
                 console.log("Response text:", responseText);
                 
