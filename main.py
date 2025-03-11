@@ -258,5 +258,15 @@ if __name__ == "__main__":
     # Usar puerto 8080 directamente
     port = 8080
     
-    print(f"Iniciando servidor en puerto {port}...")
-    uvicorn.run(app, host="0.0.0.0", port=port, reload=True)
+    try:
+        print(f"Iniciando servidor en puerto {port}...")
+        uvicorn.run(app, host="0.0.0.0", port=port)
+    except Exception as e:
+        print(f"Error al iniciar el servidor en puerto {port}: {e}")
+        # Intentar con puerto alternativo
+        try:
+            port = 3000
+            print(f"Intentando con puerto alternativo {port}...")
+            uvicorn.run(app, host="0.0.0.0", port=port)
+        except Exception as e:
+            print(f"Error al iniciar el servidor en puerto alternativo: {e}")
