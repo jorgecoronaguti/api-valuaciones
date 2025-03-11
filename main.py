@@ -60,6 +60,7 @@ async def log_requests(request, call_next):
     return response
 
 @app.get("/")
+@app.head("/")
 def read_root():
     return {
         "message": "Welcome to the Startup Valuation API",
@@ -72,6 +73,7 @@ def read_root():
     }
 
 @app.get("/status")
+@app.head("/status")
 def check_status():
     return {"status": "online", "message": "API funcionando correctamente"}
 
