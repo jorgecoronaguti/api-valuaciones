@@ -14,10 +14,10 @@ app = FastAPI(
 # Configurar CORS para permitir solicitudes desde cualquier origen
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*", "https://api-valuaciones.onrender.com", "https://v0-crear-front-api.vercel.app", "https://v0-crear-front-api.vercel.app"],
+    allow_origins=["*", "https://api-valuaciones.onrender.com", "https://v0-crear-front-api.vercel.app"],
     allow_credentials=True,
-    allow_methods=["*"],  # Permite todos los métodos
-    allow_headers=["*"],  # Permite todos los headers
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
 )
 
 @app.get("/")
@@ -31,6 +31,10 @@ def read_root():
             "First Chicago Method": "/valuate/first_chicago/"
         }
     }
+
+@app.get("/status")
+def check_status():
+    return {"status": "online", "message": "API funcionando correctamente"}
 
 # Modelo de datos que ingresará el usuario
 class StartupData(BaseModel):
