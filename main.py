@@ -61,6 +61,36 @@ def read_root():
 def check_status():
     return {"status": "online", "message": "API funcionando correctamente"}
 
+@app.get("/diagnostico")
+def diagnostico():
+    """Endpoint para verificar el estado completo de la API"""
+    import sys
+    import platform
+    
+    # Información de configuración
+    cors_origins = app.user_middleware[0].options.get("allow_origins", [])
+    
+    return {
+        "status": "online",
+        "version": app.version,
+        "python_version": sys.version,
+        "sistema_operativo": platform.system(),
+        "endpoints_disponibles": {
+            "root": "/",
+            "status": "/status",
+            "test_client": "/test",
+            "vc_method": ["/valuate/vc_method/", "/valuate/vc-method/"],
+            "dcf_method": ["/valuate/dcf/", "/valuate/dcf-method/"],
+            "berkus_method": ["/valuate/berkus/", "/valuate/berkus-method/"],
+            "first_chicago_method": ["/valuate/first_chicago/", "/valuate/first-chicago/"]
+        },
+        "cors": {
+            "origins": cors_origins,
+            "allow_credentials": True,
+            "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        }
+    }
+
 # Modelo de datos que ingresará el usuario
 class StartupData(BaseModel):
     name: str
