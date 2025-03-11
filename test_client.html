@@ -133,12 +133,33 @@
             const investment_required = parseFloat(document.getElementById('investment_required').value);
             const method = document.getElementById('method').value;
 
-            const data = {
-                name,
-                revenue,
-                growth_rate,
-                investment_required
-            };
+            let data = {};
+            let apiUrl = '';
+
+            // DCF tiene estructura diferente
+            if (method === 'dcf') {
+                apiUrl = `${baseUrl}/valuate/dcf/`;
+                data = {
+                    initial_cash_flow: parseFloat(document.getElementById('revenue').value),
+                    growth_rate: parseFloat(document.getElementById('growth_rate').value),
+                    discount_rate: 0.15, // Valor por defecto
+                    terminal_growth_rate: 0.03, // Valor por defecto
+                    projection_years: 5 // Valor por defecto
+                };
+                // Incluir también campos de StartupData para compatibilidad
+                data.name = document.getElementById('name').value;
+                data.revenue = parseFloat(document.getElementById('revenue').value);
+                data.investment_required = parseFloat(document.getElementById('investment_required').value);
+            } else {
+                apiUrl = `${baseUrl}/valuate/${method}/`;
+                data = {
+                    name,
+                    revenue,
+                    growth_rate,
+                    investment_required
+                };
+            }
+
 
             try {
                 // Usar la URL de la API en Replit
@@ -146,12 +167,12 @@
                 console.log("Using Replit API URL:", baseUrl);
 
                 console.log("Using base URL:", baseUrl);
-                
+
                 // Mostrar detalles de la petición para debugging
-                console.log("Sending request to:", `${baseUrl}/valuate/${method}/`);
+                console.log("Sending request to:", apiUrl);
                 console.log("With data:", data);
 
-                const response = await fetch(`${baseUrl}/valuate/${method}/`, {
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -159,7 +180,7 @@
                     },
                     body: JSON.stringify(data)
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`Error HTTP: ${response.status} - ${await response.text()}`);
                 }
@@ -203,7 +224,7 @@
 
                 console.log("Enviando solicitud a:", `${baseUrl}${formattedEndpoint}`);
                 console.log("Con datos:", requestBody);
-                
+
                 const response = await fetch(`${baseUrl}${formattedEndpoint}`, {
                     method: 'POST',
                     headers: {

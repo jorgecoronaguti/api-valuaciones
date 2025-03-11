@@ -121,37 +121,59 @@ class VCData(BaseModel):
 # Método de valuación Venture Capital (VC Method)
 @app.post("/valuate/vc_method/")
 @app.post("/valuate/vc-method/")  # Ruta alternativa con guión para mayor compatibilidad
-def vc_method(data: VCData | StartupData | DCFData):
-    # Extraer los valores necesarios del modelo de datos
-    revenue = getattr(data, "revenue", None)
-    if revenue is None and hasattr(data, "initial_cash_flow"):
-        revenue = data.initial_cash_flow
+def vc_method(data: dict | VCData | StartupData | DCFData):
+    try:
+        # Si es un diccionario, convertirlo a un objeto
+        if isinstance(data, dict):
+            # Intentar determinar qué modelo usar basado en los campos
+            if 'revenue' in data:
+                data = StartupData(**data)
+            elif 'initial_cash_flow' in data:
+                data = DCFData(**data)
+            else:
+                data = VCData(**data)
 
-    growth_rate = getattr(data, "growth_rate", 0.2)
-    # Si el crecimiento viene en porcentaje (20 en vez de 0.2)
-    if growth_rate > 1:
-        growth_rate = growth_rate / 100
+        # Extraer los valores necesarios del modelo de datos
+        revenue = getattr(data, "revenue", None)
+        if revenue is None and hasattr(data, "initial_cash_flow"):
+            revenue = data.initial_cash_flow
 
-    # Validación de datos
-    if revenue is None or revenue <= 0:
-        return {"valuation": 0, "error": "Los ingresos deben ser positivos"}
+        growth_rate = getattr(data, "growth_rate", 0.2)
+        # Si el crecimiento viene en porcentaje (20 en vez de 0.2)
+        if growth_rate > 1:
+            growth_rate = growth_rate / 100
 
-    # Cálculo del valor de salida considerando el crecimiento
-    multiple = max(5, 10 + growth_rate * 10)  # Ajusta el múltiplo según el crecimiento
-    exit_value = revenue * multiple
+        # Validación de datos
+        if revenue is None or revenue <= 0:
+            return {"valuation": 0, "error": "Los ingresos deben ser positivos"}
 
-    # El retorno esperado por inversores varía según el riesgo
-    investor_return = max(3, 8 - growth_rate * 5)  # Menor crecimiento = mayor retorno requerido
+        # Cálculo del valor de salida considerando el crecimiento
+        multiple = max(5, 10 + growth_rate * 10)  # Ajusta el múltiplo según el crecimiento
+        exit_value = revenue * multiple
 
-    valuation = exit_value / investor_return
-    return {"valuation": round(valuation, 2)}
+        # El retorno esperado por inversores varía según el riesgo
+        investor_return = max(3, 8 - growth_rate * 5)  # Menor crecimiento = mayor retorno requerido
+
+        valuation = exit_value / investor_return
+        return {"valuation": round(valuation, 2)}
+    except Exception as e:
+        print(f"Error en el cálculo VC Method: {e}")
+        return {"valuation": 0, "error": f"Error al calcular: {str(e)}"}
 
 # Método de valuación Descuento de Flujos de Caja (DCF)
 @app.post("/valuate/dcf/")
 @app.post("/valuate/dcf-method/")  # Ruta alternativa con guión para mayor compatibilidad
-def dcf_method(data: DCFData | StartupData):
+def dcf_method(data: dict | DCFData | StartupData):
     print(f"DCF Method received data: {data}")
     try:
+        # Si es un diccionario, convertirlo a un objeto tipo BaseModel
+        if isinstance(data, dict):
+            # Determinar qué modelo usar basado en los campos presentes
+            if 'initial_cash_flow' in data:
+                data = DCFData(**data)
+            else:
+                data = StartupData(**data)
+
         # Compatibilidad con ambos modelos
         if hasattr(data, 'revenue') and not hasattr(data, 'initial_cash_flow'):
             # Usar el modelo StartupData
@@ -222,99 +244,141 @@ def dcf_method(data: DCFData | StartupData):
         print(f"Error en el cálculo DCF: {e}")
         return {"valuation": 0, "error": f"Error al calcular: {str(e)}"}
 
-    return {"valuation": round(valuation, 2)}
-
 # Método de valuación Berkus
 @app.post("/valuate/berkus/")
 @app.post("/valuate/berkus-method/")  # Ruta alternativa con guión para mayor compatibilidad
-def berkus_method(data: StartupData):
-    # El método Berkus asigna valor basado en 5 aspectos clave
-    # Cada aspecto puede valer entre 0 y 500,000 USD
+def berkus_method(data: dict | StartupData | DCFData):
+    try:
+        # Si es un diccionario, convertirlo a StartupData
+        if isinstance(data, dict):
+            data = StartupData(**data)
 
-    # Valor base por idea/concepto
-    base_value = 500000
+        # Asegurarse de tener campos necesarios
+        revenue = getattr(data, 'revenue', None)
+        if revenue is None and hasattr(data, 'initial_cash_flow'):
+            revenue = data.initial_cash_flow
 
-    # Calidad del equipo de gestión (aproximada por ingresos)
-    revenue_factor = min(1.0, data.revenue / 2000000)
-    management_value = 500000 * revenue_factor
+        growth_rate = getattr(data, 'growth_rate', 0.2)
+        # Si el crecimiento viene en porcentaje (20 en vez de 0.2)
+        if growth_rate > 1:
+            growth_rate = growth_rate / 100
 
-    # Calidad/avance del producto
-    product_factor = min(1.0, max(0.2, data.revenue / 1000000))
-    product_value = 500000 * product_factor
+        investment_required = getattr(data, 'investment_required', 500000)
 
-    # Tamaño/potencial del mercado
-    market_factor = min(1.0, max(0.1, data.growth_rate * 2))
-    market_value = 500000 * market_factor
+        # Validación
+        if revenue is None or revenue <= 0:
+            return {"valuation": 0, "error": "Los ingresos deben ser positivos"}
 
-    # Reducción del riesgo por competencia
-    competition_factor = min(1.0, max(0.1, 1 - (data.growth_rate / 2)))
-    competition_value = 500000 * competition_factor
+        # El método Berkus asigna valor basado en 5 aspectos clave
+        # Cada aspecto puede valer entre 0 y 500,000 USD
 
-    # Riesgo financiero (basado en inversión requerida vs ingresos)
-    financial_ratio = min(1.0, max(0.1, data.revenue / max(1, data.investment_required)))
-    financial_value = 500000 * financial_ratio
+        # Valor base por idea/concepto
+        base_value = 500000
 
-    total_valuation = base_value + management_value + product_value + market_value + competition_value + financial_value
-    return {"valuation": round(total_valuation, 2)}
+        # Calidad del equipo de gestión (aproximada por ingresos)
+        revenue_factor = min(1.0, revenue / 2000000)
+        management_value = 500000 * revenue_factor
+
+        # Calidad/avance del producto
+        product_factor = min(1.0, max(0.2, revenue / 1000000))
+        product_value = 500000 * product_factor
+
+        # Tamaño/potencial del mercado
+        market_factor = min(1.0, max(0.1, growth_rate * 2))
+        market_value = 500000 * market_factor
+
+        # Reducción del riesgo por competencia
+        competition_factor = min(1.0, max(0.1, 1 - (growth_rate / 2)))
+        competition_value = 500000 * competition_factor
+
+        # Riesgo financiero (basado en inversión requerida vs ingresos)
+        financial_ratio = min(1.0, max(0.1, revenue / max(1, investment_required)))
+        financial_value = 500000 * financial_ratio
+
+        total_valuation = base_value + management_value + product_value + market_value + competition_value + financial_value
+        return {"valuation": round(total_valuation, 2)}
+    except Exception as e:
+        print(f"Error en el cálculo Berkus: {e}")
+        return {"valuation": 0, "error": f"Error al calcular: {str(e)}"}
 
 # Método de valuación First Chicago
 @app.post("/valuate/first_chicago/")
 @app.post("/valuate/first-chicago/")  # Ruta alternativa con guión para mayor compatibilidad
-def first_chicago_method(data: StartupData):
-    # First Chicago considera múltiples escenarios (éxito, lateral, fracaso)
+def first_chicago_method(data: dict | StartupData | DCFData):
+    try:
+        # Si es un diccionario, convertirlo a StartupData
+        if isinstance(data, dict):
+            data = StartupData(**data)
 
-    # Validación de datos
-    if data.revenue <= 0:
-        return {"valuation": 0, "error": "Los ingresos deben ser positivos"}
+        # Asegurarse de tener campos necesarios
+        revenue = getattr(data, 'revenue', None)
+        if revenue is None and hasattr(data, 'initial_cash_flow'):
+            revenue = data.initial_cash_flow
 
-    # Escenario optimista (éxito)
-    success_probability = min(0.7, max(0.1, data.growth_rate))
-    success_multiple = 15 + (data.growth_rate * 10)
-    success_valuation = data.revenue * success_multiple
+        growth_rate = getattr(data, 'growth_rate', 0.2)
+        # Si el crecimiento viene en porcentaje (20 en vez de 0.2)
+        if growth_rate > 1:
+            growth_rate = growth_rate / 100
 
-    # Escenario base (lateral)
-    base_probability = min(0.7, max(0.2, 0.5 - data.growth_rate/2))
-    base_multiple = 5 + (data.growth_rate * 3)
-    base_valuation = data.revenue * base_multiple
+        investment_required = getattr(data, 'investment_required', 500000)
 
-    # Escenario pesimista (fracaso)
-    failure_probability = max(0.1, 1 - success_probability - base_probability)
-    failure_multiple = max(0.2, min(1.0, data.investment_required / data.revenue))
-    failure_valuation = data.revenue * failure_multiple
+        # Validación
+        if revenue is None or revenue <= 0:
+            return {"valuation": 0, "error": "Los ingresos deben ser positivos"}
 
-    # Normalización de probabilidades
-    total_probability = success_probability + base_probability + failure_probability
-    success_probability /= total_probability
-    base_probability /= total_probability
-    failure_probability /= total_probability
+        # First Chicago considera múltiples escenarios (éxito, lateral, fracaso)
 
-    # Valoración ponderada por probabilidad
-    weighted_valuation = (
-        success_probability * success_valuation + 
-        base_probability * base_valuation + 
-        failure_probability * failure_valuation
-    )
+        # Escenario optimista (éxito)
+        success_probability = min(0.7, max(0.1, growth_rate))
+        success_multiple = 15 + (growth_rate * 10)
+        success_valuation = revenue * success_multiple
 
-    # Detalles de cada escenario para mayor transparencia
-    scenarios = {
-        "success": {
-            "probability": round(success_probability, 2),
-            "valuation": round(success_valuation, 2)
-        },
-        "base": {
-            "probability": round(base_probability, 2),
-            "valuation": round(base_valuation, 2)
-        },
-        "failure": {
-            "probability": round(failure_probability, 2),
-            "valuation": round(failure_valuation, 2)
+        # Escenario base (lateral)
+        base_probability = min(0.7, max(0.2, 0.5 - growth_rate/2))
+        base_multiple = 5 + (growth_rate * 3)
+        base_valuation = revenue * base_multiple
+
+        # Escenario pesimista (fracaso)
+        failure_probability = max(0.1, 1 - success_probability - base_probability)
+        failure_multiple = max(0.2, min(1.0, investment_required / revenue))
+        failure_valuation = revenue * failure_multiple
+
+        # Normalización de probabilidades
+        total_probability = success_probability + base_probability + failure_probability
+        success_probability /= total_probability
+        base_probability /= total_probability
+        failure_probability /= total_probability
+
+        # Valoración ponderada por probabilidad
+        weighted_valuation = (
+            success_probability * success_valuation + 
+            base_probability * base_valuation + 
+            failure_probability * failure_valuation
+        )
+
+        # Detalles de cada escenario para mayor transparencia
+        scenarios = {
+            "success": {
+                "probability": round(success_probability, 2),
+                "valuation": round(success_valuation, 2)
+            },
+            "base": {
+                "probability": round(base_probability, 2),
+                "valuation": round(base_valuation, 2)
+            },
+            "failure": {
+                "probability": round(failure_probability, 2),
+                "valuation": round(failure_valuation, 2)
+            }
         }
-    }
 
-    return {
-        "valuation": round(weighted_valuation, 2),
-        "scenarios": scenarios
-    }
+        return {
+            "valuation": round(weighted_valuation, 2),
+            "scenarios": scenarios
+        }
+    except Exception as e:
+        print(f"Error en el cálculo First Chicago: {e}")
+        return {"valuation": 0, "error": f"Error al calcular: {str(e)}"}
 
 # Endpoint para servir el cliente de prueba HTML
 from fastapi.responses import HTMLResponse
